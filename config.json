@@ -1,0 +1,11 @@
+{
+  "port": 8080,
+  "root": ".",
+  "proxy": {
+    "injectUsage": true,
+    "upstreams": [
+      { "match": "api.anthropic.com", "url": "https://api.anthropic.com", "name": "claude" },
+      { "match": "api.openai.com",    "url": "https://api.openai.com",    "name": "openai" }
+    ]
+  }
+}

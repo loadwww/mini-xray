@@ -9,4 +9,5 @@ add_executable(mxr
     src/config/config.cpp
     src/common/filewriter.cpp
 )
-target_include_directories(mxr PRIVATE src)
+target_include_directories(mxr PRIVATE src third_party)
+
