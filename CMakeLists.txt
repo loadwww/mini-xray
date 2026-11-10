@@ -7,5 +7,6 @@ add_executable(mxr
     src/common/version.cpp
     src/cli/cli.cpp
     src/config/config.cpp
+    src/common/filewriter.cpp
 )
 target_include_directories(mxr PRIVATE src)
