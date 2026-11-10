@@ -5,4 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(mxr
     src/main.cpp
     src/common/version.cpp
+    src/cli/cli.cpp
+    src/config/config.cpp
 )
+target_include_directories(mxr PRIVATE src)
