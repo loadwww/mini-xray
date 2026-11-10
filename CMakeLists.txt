@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 project(mini_xray LANGUAGES CXX VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# 让 CMake 在 build/ 下产出 compile_commands.json：IDE/clangd 据此获得精确的 include 路径与宏
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(mxr
     src/main.cpp
     src/common/version.cpp

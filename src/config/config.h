@@ -9,4 +9,5 @@ struct ProxyCfg { std::vector<Upstream> upstreams; bool injectUsage = true; };
 struct Config   { ProxyCfg proxy; int port = 8080; std::string root = "."; };
 
 std::optional<Config> loadConfig(const std::string& path);
+std::string toJsonString(const Config& cfg);
 }

@@ -29,12 +29,12 @@ std::optional<Upstream> parseUpstream(const nlohmann::json& el) {
         std::string url   = el.value("url",   std::string{});
         std::string name  = el.value("name",  std::string{});
 
-        if (match.empty() || url.empty()) {     // ① 见下面解释
+        if (match.empty() || url.empty()) {     // 缺字段时 value() 返回空串，视同非法
             return std::nullopt;
         }
-        return Upstream{match, url, name};      // ② 隐式转成 optional<Upstream>
+        return Upstream{match, url, name};      // Upstream → optional<Upstream> 隐式装箱
     } catch (const nlohmann::json::type_error&) {
-        return std::nullopt;                    // ③ 类型错 = 这条规则坏
+        return std::nullopt;                    // 类型错 = 这条规则坏，交给调用方跳过
     }
 
 }
@@ -70,39 +70,52 @@ std::optional<Config> loadConfig(const std::string& path) {
 
     Config cfg;
 
-    // 【空 2】标量字段：缺失保留结构体默认值，类型错则致命
+    // 标量字段：缺失保留结构体默认值，类型错则致命
     if (!readScalar(j, "port", cfg.port, "整数"))    return std::nullopt;
     if (!readScalar(j, "root", cfg.root, "字符串"))  return std::nullopt;
 
-    // 【空 3】结构性字段前置检查
-    // 要求: if (!j.contains("proxy")) → cerr 报错 + return std::nullopt;
-    //       然后取 const auto& pj = j.at("proxy");
-    //       if (!pj.contains("upstreams") || !pj.at("upstreams").is_array()) → 报错 + nullopt
-    //       类型：用 const nlohmann::json& 接，不要拷贝
+    // proxy 与 upstreams 是结构性字段：缺了代理无法工作，必须致命
     if (!j.contains("proxy")) {
         std::cerr << "[config] 缺少 proxy 节点\n";
         return std::nullopt;
     }
-    const auto& pj = j.at("proxy");         
+    const auto& pj = j.at("proxy");
     if (!pj.contains("upstreams") || !pj.at("upstreams").is_array()) {
         std::cerr << "[config] proxy.upstreams 缺失或不是数组\n";
         return std::nullopt;
     }
 
-    // 【空 4】proxy 内的布尔
     if (!readScalar(pj, "injectUsage", cfg.proxy.injectUsage, "布尔")) return std::nullopt;
-    // 【空 5】循环 upstreams
+
+    // 单条 upstream 坏只跳过，不连累整份配置（宁缺毋滥）
     for (const auto& el : pj.at("upstreams")) {
         auto u = parseUpstream(el);
         if (!u) { std::cerr << "[config] 跳过一条非法 upstream\n"; continue; }
         cfg.proxy.upstreams.push_back(std::move(*u));
     }
-    if (cfg.proxy.upstreams.empty()){
-        std::cerr<<"没有任何 upstream"<<std::endl;
+    if (cfg.proxy.upstreams.empty()) {
+        std::cerr << "[config] 没有任何可用的 upstream\n";
         return std::nullopt;
-    } 
+    }
 
     return cfg;
 }
+// 序列化：把内存里的 Config 写回 JSON 文本（T1.3 的"写出"方向）
+// 填空提示：
+//   ① cfg 的 port          ② cfg 的 root          ③ cfg.proxy 的 injectUsage
+//   ④ 用 u 的三个字段拼一个 object（键分别是 match / url / name）
+//   ⑤ 把 j 变成缩进 2 格的文本
+std::string toJsonString(const Config& cfg) {
+    nlohmann::json j;
+    j["port"] = cfg.port;
+    j["root"] = cfg.root;
+    j["proxy"]["injectUsage"] = cfg.proxy.injectUsage;
 
+    for (const auto& u : cfg.proxy.upstreams) {          // 每条 upstream 一个元素
+        // 每条 upstream 一个元素；数组不用预先创建，push_back 会自动把它变成数组
+        j["proxy"]["upstreams"].push_back({{"match", u.match}, {"name", u.name}, {"url", u.url}});
+    }
+
+    return j.dump(2);
+}
 } // namespace mxr

@@ -38,6 +38,22 @@ json& operator[](const std::string& key);            // 不检查，缺就直接
 for (const json& el : arr) { ... }                   // 元素是对象/标量
 ```
 
+## 构造（把内存里的结构体写回 JSON）
+
+```cpp
+json j;                                              // 默认构造 = null，赋值后自动变类型
+j["port"] = 8080;                                    // 用 operator[] 当写入点（键不存在则新建）
+j["proxy"]["injectUsage"] = true;                    // 一层层往下建，中间层自动变成 object
+j["proxy"]["upstreams"].push_back({{"match", "/x"}, {"url", "http://u"}});  // 元素是 object
+j["tags"] = {"a", "b"};                              // 列表初始化 → 数组
+
+std::string s = j.dump(2);                           // 2 空格缩进；dump() 无参 = 紧凑单行
+bool ok = json::accept(text);                        // 只校验语法、不建对象（可选）
+```
+
+要点：**写入**用 `operator[]`（会创建），**读取**用 `value()/at()`（不会偷偷造值）。
+`push_back` 作用在 null 上时 nlohmann 会自动把它变成数组——方便，但也意味着键名拼错不会报错，只会静默多出一层。
+
 ## 异常（均继承 `nlohmann::json::exception`）
 
 ```cpp
