@@ -3,3 +3,5 @@ build/
 *.obj
 *.exe
 .vscode
+# 跑验证台时产生的数据文件，不是源码
+*.jsonl

@@ -15,6 +15,7 @@
 | [fstream.md](fstream.md) | 文件读写流：`ofstream` / `ifstream` / 打开模式 / 状态位 | T1.2 |
 | [nlohmann-json.md](nlohmann-json.md) | JSON 解析、取值、遍历、异常、序列化 | T1.3 |
 | [optional.md](optional.md) | `std::optional<T>` 的完整接口 | T1.3 |
+| [mutex-thread.md](mutex-thread.md) | `std::mutex` / `lock_guard` / `unique_lock` / `std::thread`，以及"什么不是线程安全的" | T1.4 |
 
 ## 记一条纪律
 

@@ -10,6 +10,15 @@ add_executable(mxr
     src/cli/cli.cpp
     src/config/config.cpp
     src/common/filewriter.cpp
+    src/store/jsonl_writer.cpp
 )
 target_include_directories(mxr PRIVATE src third_party)
+
+# T1.4 验证台（独立目标，不参与 mxr 本体）
+add_executable(jsonl_test
+    tests/jsonl_test.cpp
+    src/store/jsonl_writer.cpp
+    src/common/filewriter.cpp
+)
+target_include_directories(jsonl_test PRIVATE src third_party)
 
