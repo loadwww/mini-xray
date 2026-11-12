@@ -3,6 +3,17 @@
 AgentXray 的重写版学习项目。目标：自己从零写出一个能抓 AI Agent 流量的反向代理。
 本文件记录「怎么构建」和「踩过的坑」，目的是**换一台干净机器，只凭这一份文件就能重建**。
 
+**文档地图**（所有 Markdown 都在 `markdown/` 下，按用途分子目录）：
+
+```
+markdown/
+├─ NOTES.md        本文件：环境、构建命令、踩过的坑
+├─ notes/          每关的口述题答案（概念、判据），隔一段时间复习用
+└─ reference/      标准库/第三方 API 的函数原型速查（按主题，不按任务），写代码前查签名
+```
+
+`markdown/` 同时是一个 Obsidian vault（`.obsidian/` 是它的配置，不进 git）。
+
 ---
 
 ## 一、环境前置
@@ -98,15 +109,20 @@ Remove-Item -Recurse -Force build    :: PowerShell
 
 ```
 mini_xray/
-├─ CMakeLists.txt        构建描述
-├─ NOTES.md              本文件
-├─ .gitignore            挡住 build/ .vs/ *.obj *.exe
+├─ CMakeLists.txt        构建描述（目标：mxr / jsonl_test / socket_check）
+├─ config.json           运行期配置样例
+├─ dev-shell.cmd         一键进入 vcvars 环境的 cmd
+├─ markdown/             所有文档（见上方文档地图）
 ├─ build/                构建目录，不进 git，可随时删掉重建
-└─ src/
-   ├─ main.cpp           CLI 入口，解析 argv
-   └─ common/
-      ├─ version.h       只有声明，可被任意编译单元包含
-      └─ version.cpp     函数定义，编译成独立的 version.cpp.obj
+├─ src/
+│  ├─ main.cpp           只有一行 return mxr::run(argc, argv);
+│  ├─ cli/               argv 解析、子命令分派、usage 单一来源
+│  ├─ config/            配置加载（nlohmann/json）与序列化
+│  ├─ common/            version / FileWriter（RAII 文件写入）
+│  ├─ store/             JsonlWriter（一行一 JSON，互斥量加锁）
+│  └─ net/               Socket（winsock 封装）
+├─ tests/                验证台，每个都是独立可执行文件
+└─ third_party/          nlohmann/json.hpp
 ```
 
 ---

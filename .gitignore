@@ -3,5 +3,7 @@ build/
 *.obj
 *.exe
 .vscode
+# Obsidian 的 vault 配置（窗口布局、插件开关），是个人偏好不是项目内容
+.obsidian/
 # 跑验证台时产生的数据文件，不是源码
 *.jsonl
