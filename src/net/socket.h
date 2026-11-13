@@ -27,8 +27,13 @@ public:
 // 两步走：构造只创建句柄（本地操作，不会因网络失败），connectTo() 才真正连接（可能阻塞十几秒）。
 class Socket {
 public:
-    Socket();                                   // 只创建句柄，失败抛 std::runtime_error
+    Socket();                                   // 客户端：只创建句柄，失败抛 std::runtime_error
     ~Socket();                                  // 句柄有效才 closesocket
+
+    // 服务端：接管一个 accept() 出来的、已经连上的句柄，不经过 connect。
+    // 为什么不直接开一个公开的 setHandle：那等于让"句柄从哪来"变成随时可改的状态，
+    // 谁都能把别人的句柄塞进来，析构时 double close。adopt 是一次性、具名的入口，语义明确。
+    static Socket adopt(SOCKET handle);
 
     Socket(const Socket&) = delete;             // 一个句柄只能有一个主人
     Socket& operator=(const Socket&) = delete;
@@ -42,6 +47,9 @@ public:
     bool isValid() const { return handle_ != INVALID_SOCKET; }
 
 private:
+    struct AdoptTag {};                         // 只为把"接管现成句柄"和"新建句柄"两个构造函数区分开
+    Socket(SOCKET handle, AdoptTag);            // 只有 adopt() 会用到
+
     SOCKET handle_ = INVALID_SOCKET;
 };
 

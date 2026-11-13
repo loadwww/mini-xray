@@ -38,6 +38,17 @@ Socket::~Socket() {
     }
 }
 
+// 接管 accept() 的成果。这两行是纯搬管道，不涉及任何 socket 调用，所以直接给出。
+// 关键点：这里不调用 connect，句柄已经是"连着的"，再 connect 一次必失败（WSAEISCONN）。
+Socket::Socket(SOCKET handle, AdoptTag) : handle_(handle) {}
+
+Socket Socket::adopt(SOCKET handle) {
+    if (handle == INVALID_SOCKET) {
+        throw std::runtime_error("adopt 收到无效句柄");
+    }
+    return Socket(handle, AdoptTag{});      // C++17 保证这里不产生临时对象（拷贝省略）
+}
+
 Socket::Socket(Socket&& other) noexcept : handle_(other.handle_) {
     other.handle_ = INVALID_SOCKET;      // 移交后源变空句柄，它的析构不会重复关
 }

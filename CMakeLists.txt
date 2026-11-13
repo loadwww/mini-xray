@@ -13,6 +13,8 @@ add_executable(mxr
     src/common/filewriter.cpp
     src/store/jsonl_writer.cpp
     src/net/socket.cpp
+    src/net/listener.cpp
+    src/http/http_request.cpp
 )
 target_include_directories(mxr PRIVATE src third_party)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -33,3 +35,13 @@ add_executable(socket_check
 )
 target_include_directories(socket_check PRIVATE src third_party)
 target_link_libraries(socket_check PRIVATE ws2_32)
+
+# T2.2 验证台：手写的最小 HTTP 服务端
+add_executable(http_server_check
+    tests/http_server_check.cpp
+    src/net/socket.cpp
+    src/net/listener.cpp
+    src/http/http_request.cpp
+)
+target_include_directories(http_server_check PRIVATE src third_party)
+target_link_libraries(http_server_check PRIVATE ws2_32)
