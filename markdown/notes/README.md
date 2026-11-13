@@ -14,3 +14,4 @@
 |---|---|
 | [M0-环境与构建.md](M0-环境与构建.md) | 构建系统、翻译单元、头文件、Debug/Release |
 | [M1-工程式C++.md](M1-工程式C++.md) | RAII、所有权、string_view、并发锁粒度、错误策略 |
+| [M2-HTTP实战.md](M2-HTTP实战.md) | 字节流与报文边界、recv 三值、socket 所有权、库与手写各自的位置 |

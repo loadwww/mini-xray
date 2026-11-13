@@ -45,3 +45,10 @@ add_executable(http_server_check
 )
 target_include_directories(http_server_check PRIVATE src third_party)
 target_link_libraries(http_server_check PRIVATE ws2_32)
+
+# T2.3 验证台：同样的服务端，换成 cpp-httplib（header-only，只 include 即可）
+add_executable(httplib_check
+    tests/httplib_check.cpp
+)
+target_include_directories(httplib_check PRIVATE third_party third_party/cpp-httplib)
+target_link_libraries(httplib_check PRIVATE ws2_32)

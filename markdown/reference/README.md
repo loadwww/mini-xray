@@ -17,6 +17,7 @@
 | [optional.md](optional.md) | `std::optional<T>` 的完整接口 | T1.3 |
 | [mutex-thread.md](mutex-thread.md) | `std::mutex` / `lock_guard` / `unique_lock` / `std::thread`，以及"什么不是线程安全的" | T1.4 |
 | [winsock.md](winsock.md) | Winsock2：`WSAStartup` / `socket` / `connect` / `send` / `recv` 的返回值语义与错误码 | T2.1 |
+| [httplib.md](httplib.md) | cpp-httplib：`Server` / `Request` / `Response` / 路由注册 / 与手写版的对照表 | T2.3 |
 
 ## 记一条纪律
 
