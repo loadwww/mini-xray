@@ -19,6 +19,7 @@
 | [winsock.md](winsock.md) | Winsock2：`WSAStartup` / `socket` / `connect` / `send` / `recv` 的返回值语义与错误码 | T2.1 |
 | [httplib.md](httplib.md) | cpp-httplib：`Server` / `Request` / `Response` / 路由注册 / 与手写版的对照表 | T2.3 |
 | [std-string.md](std-string.md) | `std::string`：`compare` 判前缀、`substr`、`insert`、`npos`，以及无符号下溢/`operator[]` 越界两个坑 | T3.1 |
+| [condition-variable.md](condition-variable.md) | `std::thread` / `condition_variable` / `unique_lock` / `queue` / `atomic` / `<filesystem>`，含生产者-消费者模板 | T3.3 |
 
 ## 记一条纪律
 

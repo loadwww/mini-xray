@@ -18,6 +18,10 @@ add_executable(mxr
     src/proxy/route.cpp
     src/proxy/target.cpp
     src/proxy/server.cpp
+    src/common/clock.cpp
+    src/store/event.cpp
+    src/store/redact.cpp
+    src/store/recorder.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -70,3 +74,15 @@ add_executable(route_test
     src/proxy/target.cpp
 )
 target_include_directories(route_test PRIVATE src third_party)
+
+# T3.3 验证台：脱敏 + 异步记录器（不联网，但会写临时文件）
+add_executable(recorder_test
+    tests/recorder_test.cpp
+    src/store/recorder.cpp
+    src/store/event.cpp
+    src/store/redact.cpp
+    src/store/jsonl_writer.cpp
+    src/common/filewriter.cpp
+    src/common/clock.cpp
+)
+target_include_directories(recorder_test PRIVATE src third_party)
