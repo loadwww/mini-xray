@@ -7,6 +7,8 @@
 
 #include "common/version.h"
 #include "config/config.h"
+#include "proxy/route.h"
+#include "proxy/server.h"
 #include "store/jsonl_writer.h"
 
 namespace {
@@ -19,6 +21,7 @@ void printUsage(std::ostream& os) {
           "commands:\n"
           "  version          打印版本号\n"
           "  cfg <path>       加载配置并以 JSON 打印\n"
+          "  serve [cfg]      启动反向代理（默认读 config.json）\n"
           "  echo <text>      向 <root>/events.jsonl 追加一条记录\n"
           "  help             显示本说明\n";
 }
@@ -91,6 +94,30 @@ int mxr::run(int argc, char* argv[]) {
             std::cout << toJsonString(*cfg) << "\n";
             return kExitOk;
         }
+        if (cmd == "serve") {
+            // 配置文件路径：`mxr serve` 用默认的 config.json，`mxr serve xxx.json` 用指定的
+            const std::string cfgPath = (i + 1 < argc) ? argv[i + 1] : "config.json";
+
+            // 启动阶段有两道关，顺序不能反：
+            //   先"读得出来"（语法/字段类型），再"说得通"（match 合法、互相不冲突）
+            /*①*/ // loadConfig(cfgPath) → nullopt 就打 "配置文件格式有误" + return kExitFail
+            std::optional<Config> cfg=loadConfig(cfgPath);
+            if(cfg==std::nullopt){
+                std::cerr << "配置文件格式有误\n";
+                return kExitFail;
+            }
+            /*②*/ // validateUpstreams(cfg->proxy.upstreams)
+                  //   有错误 → std::cerr << "fatal: " << *err << "\n"; return kExitFail;
+                  //   没问题 → 往下走。这就是 T3.1 那个函数第一次真被调用
+
+            // 进了 serve 就出不来：它阻塞在自己的 listen 循环里
+            std::optional<std::string> err=validateUpstreams(cfg->proxy.upstreams);
+            if(err!=std::nullopt){
+                std::cerr << "fatal: " << *err << "\n"; return kExitFail;
+            }
+            return serve(*cfg);
+        }
+
         if (cmd == "echo") {
             if (i + 1 >= argc) {
                 std::cerr << "mxr: echo 缺少要写入的文本\n";

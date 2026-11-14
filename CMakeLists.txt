@@ -15,8 +15,11 @@ add_executable(mxr
     src/net/socket.cpp
     src/net/listener.cpp
     src/http/http_request.cpp
+    src/proxy/route.cpp
+    src/proxy/target.cpp
+    src/proxy/server.cpp
 )
-target_include_directories(mxr PRIVATE src third_party)
+target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
 target_link_libraries(mxr PRIVATE ws2_32)
 
@@ -52,3 +55,18 @@ add_executable(httplib_check
 )
 target_include_directories(httplib_check PRIVATE third_party third_party/cpp-httplib)
 target_link_libraries(httplib_check PRIVATE ws2_32)
+
+# T2.4 mock 上游：M3 起当"假 OpenAI"用，长期挂着的进程
+add_executable(mock_upstream
+    tests/mock_upstream.cpp
+)
+target_include_directories(mock_upstream PRIVATE third_party third_party/cpp-httplib)
+target_link_libraries(mock_upstream PRIVATE ws2_32)
+
+# T3.1 验证台：路由匹配（纯字符串，不联网）
+add_executable(route_test
+    tests/route_test.cpp
+    src/proxy/route.cpp
+    src/proxy/target.cpp
+)
+target_include_directories(route_test PRIVATE src third_party)

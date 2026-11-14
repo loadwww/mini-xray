@@ -66,4 +66,63 @@ handler 里若写共享数据（计数器、你的 JsonlWriter），要么加锁
 | keep-alive（手写版没有：一连接一请求） | 库默认支持，一个连接连发多个请求 |
 | findHeader 的大小写不敏感查找 | 库把所有键归一成小写 |
 | 手写版没有：URL 解码 | `req.path` 已解码 |
-| 手写版没有：超时 | 库可设读写超时（本关不碰） |
+| 手写版没有：超时 | 库可设读写超时（T3.2 起会用到） |
+
+## 客户端（T3.2 起）
+
+```cpp
+#include <httplib.h>
+
+httplib::Client cli("http://127.0.0.1:9100");   // scheme://host:port
+httplib::Client cli("127.0.0.1", 9100);         // 等价写法，只能 http
+
+cli.set_connection_timeout(3, 0);               // 连接超时：秒, 微秒
+cli.set_read_timeout(30, 0);                    // 读超时：上游接了连接但不回数据
+cli.set_write_timeout(30, 0);
+```
+
+### 通用发送（代理就用这个）
+
+```cpp
+httplib::Request req;              // 自己造一个，不是收到的那个
+req.method = "POST";
+req.path   = "/v1/chat/completions";
+req.body   = body;
+req.set_header("Content-Type", "application/json");
+
+httplib::Result r = cli.send(req);
+```
+
+不需要为每个 method 记一个函数（`Get` / `Post` / `Put` … 那些重载都在，但代理用 `send` 更直接）。
+
+### `Result`：response 或 error，二选一
+
+```cpp
+class Result {
+    operator bool() const;                 // true = 拿到了响应
+    Response& operator*();                 // 解引用（未检查）
+    Response* operator->();                // r->status / r->body
+    Error error() const;                   // 失败原因（枚举）
+};
+
+std::string to_string(Error);              // 枚举转人话："Connection" / "Timeout" / ...
+```
+
+用法：
+
+```cpp
+if (!r) {
+    // 连不上、DNS 失败、超时、协议错 —— 都属于"网关拿不到上游响应"
+    std::cerr << to_string(r.error());
+} else {
+    r->status;                              // 上游的状态码，可能是 200/400/500
+    r->body;                                // 上游的正文
+    r->get_header_value("Content-Type");     // 头（键大小写不敏感，找不到返回 ""）
+}
+```
+
+### 三个坑
+
+1. **`Result` 里有 `unique_ptr<Response>`**，不可拷贝。`auto r = cli.send(req)` 之后只能 `r->`，不能赋值给别的变量再传。
+2. **一个 Client 每次请求新建 = 每次 TCP 握手**（https 还要加 TLS 握手）。T3.2 先这样，M4 讨论连接复用。
+3. **它不会替你处理 header**：`Host` 按 `scheme_host_port` 填，`Content-Length` 按实际 body 算，但 `Connection` / `Transfer-Encoding` 这些 hop-by-hop header 你传什么它就发什么——得自己挑。
