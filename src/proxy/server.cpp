@@ -136,7 +136,11 @@ void replyJsonError(httplib::Response &res, int status, const std::string &messa
             line << "  " << ms << "ms";
         }
         line << "\n";
-        std::cout << line.str();
+        // 必须 flush：std::cout 连终端时是行缓冲（每个 \n 都刷），但连管道/文件时
+        // 是**全缓冲**（攒满约 4KB 才刷）。日志重定向到文件、或者被 tools 捕获时，
+        // 不 flush 就意味着"请求早就处理完了，日志过几十条才出现"—— 排查现场时
+        // 最需要的就是这一刻的输出。代价是一次 write 系统调用，量级是微秒。
+        std::cout << line.str() << std::flush;
     }
 
 } // namespace

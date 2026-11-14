@@ -109,20 +109,23 @@ Remove-Item -Recurse -Force build    :: PowerShell
 
 ```
 mini_xray/
-├─ CMakeLists.txt        构建描述（目标：mxr / jsonl_test / socket_check）
-├─ config.json           运行期配置样例
+├─ CMakeLists.txt        构建描述（mxr / route_test / recorder_test / 各验证台）
+├─ config.json           运行期配置样例（proxy.upstreams 按**路径前缀**匹配）
 ├─ dev-shell.cmd         一键进入 vcvars 环境的 cmd
 ├─ markdown/             所有文档（见上方文档地图）
 ├─ build/                构建目录，不进 git，可随时删掉重建
+├─ runs/                 每次 serve 落一个 <YYYYMMDD-HHMMSS>/events.jsonl，不进 git
 ├─ src/
 │  ├─ main.cpp           只有一行 return mxr::run(argc, argv);
-│  ├─ cli/               argv 解析、子命令分派、usage 单一来源
+│  ├─ cli/               argv 解析、子命令分派（cfg / echo / serve / version）
 │  ├─ config/            配置加载（nlohmann/json）与序列化
-│  ├─ common/            version / FileWriter（RAII 文件写入）
-│  ├─ store/             JsonlWriter（一行一 JSON，互斥量加锁）
-│  └─ net/               Socket（winsock 封装）
+│  ├─ common/            version / FileWriter / clock（nowMs、stampNow）
+│  ├─ store/             JsonlWriter、Event、redact（脱敏）、Recorder（异步写线程）
+│  ├─ http/              HttpRequest + readRequest（手写报文解析）
+│  ├─ net/               WsaGuard / Socket / Listener（winsock RAII）
+│  └─ proxy/             route（路径段匹配）、target（URL 拆分）、server（httplib 转发）
 ├─ tests/                验证台，每个都是独立可执行文件
-└─ third_party/          nlohmann/json.hpp
+└─ third_party/          nlohmann/json.hpp、cpp-httplib/httplib.h
 ```
 
 ---
