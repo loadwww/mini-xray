@@ -100,11 +100,7 @@ std::optional<Config> loadConfig(const std::string& path) {
 
     return cfg;
 }
-// 序列化：把内存里的 Config 写回 JSON 文本（T1.3 的"写出"方向）
-// 填空提示：
-//   ① cfg 的 port          ② cfg 的 root          ③ cfg.proxy 的 injectUsage
-//   ④ 用 u 的三个字段拼一个 object（键分别是 match / url / name）
-//   ⑤ 把 j 变成缩进 2 格的文本
+
 std::string toJsonString(const Config& cfg) {
     nlohmann::json j;
     j["port"] = cfg.port;

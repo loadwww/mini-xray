@@ -9,6 +9,7 @@ add_executable(mxr
     src/main.cpp
     src/common/version.cpp
     src/cli/cli.cpp
+    src/cli/replay.cpp
     src/config/config.cpp
     src/common/filewriter.cpp
     src/store/jsonl_writer.cpp
@@ -17,11 +18,15 @@ add_executable(mxr
     src/http/http_request.cpp
     src/proxy/route.cpp
     src/proxy/target.cpp
+    src/proxy/stream_bridge.cpp
     src/proxy/server.cpp
+    src/parse/sse.cpp
     src/common/clock.cpp
     src/store/event.cpp
     src/store/redact.cpp
     src/store/recorder.cpp
+    src/store/sse_run.cpp
+    src/model/model.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -86,3 +91,46 @@ add_executable(recorder_test
     src/common/clock.cpp
 )
 target_include_directories(recorder_test PRIVATE src third_party)
+
+# T4.1 验证台：chunked 解码（纯字节操作，不联网）
+add_executable(chunked_test
+    tests/chunked_test.cpp
+    src/parse/chunked.cpp
+)
+target_include_directories(chunked_test PRIVATE src third_party)
+
+# T4.2 验证台：StreamBridge（纯线程，不联网）
+add_executable(stream_bridge_test
+    tests/stream_bridge_test.cpp
+    src/proxy/stream_bridge.cpp
+)
+target_include_directories(stream_bridge_test PRIVATE src third_party)
+
+# T4.3 验证台：SSE 解析状态机（纯字符串，不联网）
+add_executable(sse_test
+    tests/sse_test.cpp
+    src/parse/sse.cpp
+)
+target_include_directories(sse_test PRIVATE src third_party)
+
+# T4.4 验证台：落盘 → 重放 → 对账（不联网，会写 runs/replay_test_events.jsonl）
+add_executable(replay_test
+    tests/replay_test.cpp
+    src/cli/replay.cpp
+    src/store/sse_run.cpp
+    src/parse/sse.cpp
+    src/store/recorder.cpp
+    src/store/event.cpp
+    src/store/redact.cpp
+    src/store/jsonl_writer.cpp
+    src/common/filewriter.cpp
+    src/common/clock.cpp
+)
+target_include_directories(replay_test PRIVATE src third_party)
+
+# T5.1 验证台：执行图数据模型的 JSON 往返（纯数据，不联网）
+add_executable(model_test
+    tests/model_test.cpp
+    src/model/model.cpp
+)
+target_include_directories(model_test PRIVATE src third_party)

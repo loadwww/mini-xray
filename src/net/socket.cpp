@@ -12,9 +12,7 @@ namespace mxr {
 
 WsaGuard::WsaGuard() {
     WSADATA wsa{};
-    // ① 进程级初始化：载入 ws2_32.dll、协商 2.2 版本。
-    // 形状：if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) { 抛 std::runtime_error }
-    // 消息里带上返回值。坑：没调用它之前，任何 socket 调用都返回 WSANOTINITIALISED(10093)。
+
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) { throw std::runtime_error("wsa初始化失败"); }
 }
 
@@ -23,9 +21,7 @@ WsaGuard::~WsaGuard() {
 }
 
 Socket::Socket() {
-    // ② 创建 TCP 句柄：socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)，赋给 handle_。
-    // 坑：SOCKET 是无符号类型，失败值是 INVALID_SOCKET（全 1），不是 -1——用 int 接、判 < 0 永远不成立。
-    // 失败抛 std::runtime_error，消息里带 WSAGetLastError()。
+
     handle_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (handle_ == INVALID_SOCKET) {
         throw std::runtime_error("socket 创建失败，错误码 " + std::to_string(WSAGetLastError()));
@@ -66,10 +62,7 @@ Socket& Socket::operator=(Socket&& other) noexcept {
 
 void Socket::connectTo(const std::string& host, int port) {
     sockaddr_in addr{};
-    // ③ 填三个字段，每个都有坑：
-    //    sin_family = AF_INET;                        ← connect 靠它判断这段内存该怎么解释，漏填报 WSAEAFNOSUPPORT
-    //    sin_port   = htons(...);                     ← 主机序转网络序（x86 小端、网络大端）；port 是 int，要 static_cast<u_short>
-    //    sin_addr.s_addr = inet_addr(host.c_str());   ← 点分十进制 → 网络序整数，失败返回 INADDR_NONE；不支持域名/IPv6
+
     addr.sin_family = AF_INET;   
     addr.sin_port   = htons(port);
     addr.sin_addr.s_addr = inet_addr(host.c_str()); 

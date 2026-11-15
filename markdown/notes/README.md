@@ -16,3 +16,4 @@
 | [M1-工程式C++.md](M1-工程式C++.md) | RAII、所有权、string_view、并发锁粒度、错误策略 |
 | [M2-HTTP实战.md](M2-HTTP实战.md) | 字节流与报文边界、recv 三值、socket 所有权、库与手写各自的位置 |
 | [M3-反向代理.md](M3-反向代理.md) | 正/反向代理、路径段前缀、hop-by-hop header、fail-fast、生产者消费者、事件 schema |
+| [M4-SSE流式.md](M4-SSE流式.md) | chunked 与 SSE 两层分帧、跨线程流式转发、背压 vs 降级、条件变量、两级缓冲、schema 演进、在线记录与离线重放、两个钟、生命周期 |

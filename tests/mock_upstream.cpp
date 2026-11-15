@@ -62,6 +62,72 @@ int main(int argc, char *argv[])
                      delay = std::stoi(d);
                  }
                  std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+
+                 // ②.5 T4.2 起支持 SSE：body 里 "stream": true 就走流式分支。
+                 //     每块之间停 200ms —— 这是"打字机效果"的来源，也是验证
+                 //     代理有没有"边收边发"的唯一手段：如果代理攒完再发，
+                 //     客户端会先静默 10 × 200ms，然后一次性刷出全部 10 段。
+                 //
+                 //     流的形状和 OpenAI 一致：
+                 //       data: {"choices":[{"delta":{"content":"tok0 "}}]}\n\n
+                 //       ...
+                 //       data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n
+                 //       data: [DONE]\n\n
+                 //     注意每块末尾是**两个** \n（空行才是事件边界），
+                 //     data: 后面有一个空格。
+                 if (in.value("stream", false))
+                 {
+                     const std::string model = in["model"].get<std::string>();
+                     res.set_chunked_content_provider(
+                         "text/event-stream",
+                         [model, i = 0](std::size_t, httplib::DataSink &sink) mutable
+                         {
+                             std::string payload;
+                             if (i < 10)
+                             {
+                                 nlohmann::json chunk;
+                                 chunk["id"] = "chatcmpl-mock";
+                                 chunk["object"] = "chat.completion.chunk";
+                                 chunk["model"] = model;
+                                 chunk["choices"] = nlohmann::json::array();
+                                 chunk["choices"].push_back(
+                                     {{"index", 0},
+                                      {"delta", {{"content", "tok" + std::to_string(i) + " "}}},
+                                      {"finish_reason", nullptr}});
+                                 payload = "data: " + chunk.dump() + "\n\n";
+                                 ++i;
+                                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                             }
+                             else if (i == 10)
+                             {
+                                 nlohmann::json chunk;
+                                 chunk["id"] = "chatcmpl-mock";
+                                 chunk["object"] = "chat.completion.chunk";
+                                 chunk["model"] = model;
+                                 chunk["choices"] = nlohmann::json::array();
+                                 chunk["choices"].push_back(
+                                     {{"index", 0}, {"delta", nlohmann::json::object()}, {"finish_reason", "stop"}});
+                                 chunk["usage"] = {{"prompt_tokens", 10},
+                                                   {"completion_tokens", 10},
+                                                   {"total_tokens", 20}};
+                                 payload = "data: " + chunk.dump() + "\n\n";
+                                 ++i;
+                             }
+                             else
+                             {
+                                 payload = "data: [DONE]\n\n";
+                                 if (!sink.write(payload.data(), payload.size()))
+                                 {
+                                     return false;
+                                 }
+                                 sink.done(); // 告诉库"说完了"，否则它会一直调下去
+                                 return true;
+                             }
+                             return sink.write(payload.data(), payload.size());
+                         });
+                     return;
+                 }
+
                  // ③ OpenAI 形状的响应。四个要点：
                  //    - model 用请求里带过来的（round-trip），不是写死的
                  //    - choices 是"数组里放对象"，所以要显式 json::array() 再 push_back

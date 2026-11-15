@@ -19,10 +19,6 @@ namespace mxr
             throw std::runtime_error("socket 创建失败，错误码 " + std::to_string(WSAGetLastError()));
         }
 
-        // ② 允许端口复用：setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, ...)。
-        //    参数是个 const char*，指向一个 int/int 布尔值，长度 sizeof(int)。
-        //    坑：不设它，程序刚退出就立刻重启会 bind 失败 10048（WSAEADDRINUSE）——
-        //    上一个进程的端口还在 TIME_WAIT 里没放干净。失败也抛异常。
         int optval = 1; // 1 表示开启
         if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR,
                        reinterpret_cast<const char *>(&optval), sizeof(optval)) == SOCKET_ERROR)
@@ -60,13 +56,7 @@ namespace mxr
 
     Socket Listener::accept()
     {
-        // ⑤ 先调 Winsock 的 accept 拿到"已经连上"的新句柄，失败返回 INVALID_SOCKET。
-        //    坑：必须写 ::accept —— 成员函数里不带限定的 accept 会先找到 Listener::accept（本函数自己），
-        //    类作用域的名字会"挡住"全局名字（名字隐藏），于是报"函数不接受 3 个参数"。
-        //    :: 前缀 = 明确要全局命名空间里的那个。新句柄和 handle_ 是两个不同的套接字：
-        //    handle_ 继续待命，新句柄才是这条连接的通道。
-        //    用 Socket::adopt(...) 把新句柄包成 Socket —— 不能走 Socket() 构造，那个只建空句柄、不会连。
-        //    失败抛 std::runtime_error，带 WSAGetLastError()。
+
         SOCKET conn = ::accept(handle_, nullptr, nullptr);
         if (conn == INVALID_SOCKET)
         {

@@ -20,6 +20,11 @@
 | [httplib.md](httplib.md) | cpp-httplib：`Server` / `Request` / `Response` / 路由注册 / 与手写版的对照表 | T2.3 |
 | [std-string.md](std-string.md) | `std::string`：`compare` 判前缀、`substr`、`insert`、`npos`，以及无符号下溢/`operator[]` 越界两个坑 | T3.1 |
 | [condition-variable.md](condition-variable.md) | `std::thread` / `condition_variable` / `unique_lock` / `queue` / `atomic` / `<filesystem>`，含生产者-消费者模板 | T3.3 |
+| [string-view.md](string-view.md) | `std::string_view`：成员函数、三个坑（悬垂/无 `\0`/隐式转换方向）、何时用何时不用；附 `<cctype>` 字符分类与十六进制转换 | T4.1 |
+| [httplib-streaming.md](httplib-streaming.md) | 流式 API：`Request::content_receiver` / `response_handler`、`set_chunked_content_provider`、`DataSink`、provider 的调用循环语义 | T4.2 |
+| [sse.md](sse.md) | SSE 行规则、OpenAI chunk 字段位置、nlohmann 安全提取套路、`std::string` 切行原型 | T4.3 |
+| [replay-cli.md](replay-cli.md) | `ifstream`/`getline`、不抛异常的 `json::parse`、`value<T>` 默认值类型、两个钟的分工、本项目 Event/Recorder/Replay 接口 | T4.4 |
+| [nlohmann-adl.md](nlohmann-adl.md) | ADL `to_json`/`from_json`、`json j = obj` / `j.get<T>()`、`value` vs `at` vs `get`、枚举字符串化、C++17 手写 `operator==` | T5.1 |
 
 ## 记一条纪律
 

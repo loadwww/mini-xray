@@ -5,28 +5,6 @@
 namespace mxr
 {
 
-    // ═══ T3.1 填空作业 ═══════════════════════════════════════════════
-    //
-    // 整体样例（配置：唯一一条 {"match":"/v1","url":"http://127.0.0.1:9100/v1"}）
-    //
-    //   客户端请求行            resolve 结果 path        转发层最终打出去
-    //   POST /v1/chat/compl… →  "/chat/completions"  →  http://127.0.0.1:9100/v1/chat/completions
-    //   GET  /v1/models      →  "/models"            →  http://127.0.0.1:9100/v1/models
-    //   POST /v1             →  "/"                  →  http://127.0.0.1:9100/v1/
-    //   GET  /v1beta/x       →  nullopt（无匹配）     →  404
-    //
-    // 本期只做"纯字符串判断"，一行网络代码都不要写。
-    //
-    // 会用到的东西（std::string 成员，括号里是签名）
-    //   size() / empty()
-    //   compare(pos, n, s)      从 pos 开始取 n 个字符跟 s 比，相等返回 0
-    //                           —— 用来判前缀，比 substr 省一次拷贝
-    //   operator[](i)           取第 i 个字符，**不检查越界**，所以取之前必须先确认 i < size()
-    //   substr(pos, n)          截子串，pos 越界会抛 out_of_range（别让它有机会抛）
-    //   insert(pos, s)          在 pos 处插入
-    //
-    // ═════════════════════════════════════════════════════════════════
-
     // ── ① path 是否落在 prefix 这个"路径段"下面 ──────────────────────
     // 判据按顺序想清楚，任何一步都能直接判否：
     //   1) prefix 比 path 还长 → 不可能
@@ -114,16 +92,6 @@ namespace mxr
         return res;
     }
 
-    // ── ④ 启动时校验 ────────────────────────────────────────────────
-    // 写成"一发现不对就 return 错误描述"，天然就是 fail-fast。
-    // 要拦的四种情况（返回的字符串会被上层打成 fatal: xxx，所以写清是哪条配置错了）：
-    //   1) match 不以 '/' 开头           → "match must start with '/': " + u.match
-    //   2) match 以 '/' 结尾但又不是 "/"  → "match must not end with '/': " + u.match
-    //      （"/v1/" 会和 "/v1" 抢同一批请求，且剥完前缀会多出斜杠）
-    //   3) url 为空                       → "upstream url is empty: " + u.name
-    //   4) 两条 match 一模一样            → "duplicate match: " + u.match
-    //      用两层循环两两比较即可，配置只有几条，O(n²) 无所谓。
-    // 全部通过 → return std::nullopt（注意：是"没有错误"用 nullopt 表示，别返回空串）。
     std::optional<std::string> validateUpstreams(const std::vector<Upstream> &ups)
     {
         int n = ups.size();

@@ -37,27 +37,6 @@ const std::regex& reBearer()
 
 } // namespace
 
-// ═══ T3.3 填空（二）：body 脱敏 ══════════════════════════════════
-//
-// 目标：把 body 里可能出现的 key 换成 "***"，其余原样保留（包括 JSON 结构、
-// 引号、转义 —— 我们不是要解析它，只是要"文本替换"）。
-//
-// 输入 → 输出：
-//   {"api_key":"sk-proj-abcdefghijklmn"}      → {"api_key":"sk-***"}
-//   {"headers":{"Authorization":"Bearer abc123"}} → {"headers":{"Authorization":"Bearer ***"}}
-//   {"model":"gpt-4"}                          → 原样（没东西可脱）
-//   "sk-1"                                     → 原样（长度不够 10，不是真 key）
-//
-// 用得到（<regex>）：
-//   std::regex_replace(输入字符串, 正则, 替换串)   // 返回新字符串，不修改入参
-//   上面两个模式已经写好了：reSk()、reBearer()
-//   替换串：sk 那条用 "sk-***"（保留前缀，看日志时还知道这是哪家的 key）；
-//           Bearer 那条用 "Bearer ***"（保留 scheme，否则看不出这是鉴权头）。
-//
-// 两条要连着做：先把 sk-xxx 换掉，再处理 Bearer。
-// （顺序其实无所谓，但脑子里要有"改完的串接着被下一个规则扫"这个模型。）
-//
-// 一个坑：不要写成 `redactBody(x) = ...` 这种就地修改，函数签名是返回值。
 std::string redactBody(const std::string& body)
 {
     //处理sk
