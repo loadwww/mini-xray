@@ -52,6 +52,7 @@ struct Event {
     long long   totalTokens = 0;
     long long   durationMs = -1;   // sse_end：流开始 → 结束的耗时
     int         badDataCount = 0;  // sse_end：坏块数
+    std::string finishReason;      // sse_end：最后一次非空的 finish_reason（T5.2 用）
 };
 
 // 序列化成一行 JSON（不含换行符，换行由 JsonlWriter 负责）

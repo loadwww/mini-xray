@@ -27,6 +27,7 @@ nlohmann::json toJson(const Event& ev)
                       {"total_tokens", ev.totalTokens}};
         j["duration_ms"] = ev.durationMs;
         j["bad_data"] = ev.badDataCount;
+        j["finish_reason"] = ev.finishReason;
     }
     
     return j;

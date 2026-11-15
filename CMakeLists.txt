@@ -27,6 +27,7 @@ add_executable(mxr
     src/store/recorder.cpp
     src/store/sse_run.cpp
     src/model/model.cpp
+    src/parse/extract.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -134,3 +135,12 @@ add_executable(model_test
     src/model/model.cpp
 )
 target_include_directories(model_test PRIVATE src third_party)
+
+# T5.2 验证台：协议字段提取（纯 JSON，不联网）
+add_executable(extract_test
+    tests/extract_test.cpp
+    src/parse/extract.cpp
+    src/model/model.cpp
+    src/store/event.cpp
+)
+target_include_directories(extract_test PRIVATE src third_party)

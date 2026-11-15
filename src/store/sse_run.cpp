@@ -13,7 +13,7 @@ namespace mxr
     }
 
     // 收到一块原始字节：喂在线累积器，并落一条 sse_chunk。
-void SseRunLogger::onChunk(const std::string &rawBytes)
+    void SseRunLogger::onChunk(const std::string &rawBytes)
     {
         if (ended_)
             return;
@@ -28,7 +28,7 @@ void SseRunLogger::onChunk(const std::string &rawBytes)
     }
 
     // 流结束（或客户端断开）：落一条 sse_end 总结，幂等。
-void SseRunLogger::onEnd()
+    void SseRunLogger::onEnd()
     {
         if (ended_)
             return;
@@ -39,6 +39,7 @@ void SseRunLogger::onEnd()
         ev.hop = hop_;
         ev.tsMs = nowMs();
         ev.text = acc_.text();
+        ev.finishReason = acc_.finishReason();
         ev.badDataCount = acc_.badDataCount();
         ev.durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0_).count();
         if(acc_.hasUsage()){
