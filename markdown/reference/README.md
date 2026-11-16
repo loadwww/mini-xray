@@ -27,6 +27,7 @@
 | [nlohmann-adl.md](nlohmann-adl.md) | ADL `to_json`/`from_json`、`json j = obj` / `j.get<T>()`、`value` vs `at` vs `get`、枚举字符串化、C++17 手写 `operator==` | T5.1 |
 | [json-extract.md](json-extract.md) | 不抛异常的 `parse`、`is_xxx` 类型判断、缺键/null/类型不符三者语义、OpenAI 字段位置表、`Usage::observed` 判据 | T5.2 |
 | [chain-hash.md](chain-hash.md) | 滚动前缀哈希与 FNV-1a、前缀判定公式、稳定 run id、`map`/`sort`/`getline` 配对原型、system-only 陷阱 | T5.3 |
+| [superstep.md](superstep.md) | 超步归并：ToolExec/ToolCall 字段表、`contains` 只读判断、`map` 反查、`max` 钳负区间、失败分级判定顺序 | T5.4 |
 
 ## 记一条纪律
 

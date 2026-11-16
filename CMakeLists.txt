@@ -29,6 +29,7 @@ add_executable(mxr
     src/model/model.cpp
     src/parse/extract.cpp
     src/chain/link.cpp
+    src/chain/superstep.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -154,3 +155,13 @@ add_executable(link_test
     src/model/model.cpp
 )
 target_include_directories(link_test PRIVATE src third_party)
+
+# T5.4 验证台：超步归并（纯数据，不联网）
+add_executable(superstep_test
+    tests/superstep_test.cpp
+    src/chain/superstep.cpp
+    src/chain/link.cpp
+    src/parse/extract.cpp
+    src/model/model.cpp
+)
+target_include_directories(superstep_test PRIVATE src third_party)
