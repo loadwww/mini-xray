@@ -30,6 +30,7 @@ add_executable(mxr
     src/parse/extract.cpp
     src/chain/link.cpp
     src/chain/superstep.cpp
+    src/graph/mermaid.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -165,3 +166,11 @@ add_executable(superstep_test
     src/model/model.cpp
 )
 target_include_directories(superstep_test PRIVATE src third_party)
+
+# T6.1 验证台：Mermaid 图输出（纯字符串，不联网、不写文件）
+add_executable(mermaid_test
+    tests/mermaid_test.cpp
+    src/graph/mermaid.cpp
+    src/model/model.cpp
+)
+target_include_directories(mermaid_test PRIVATE src third_party)
