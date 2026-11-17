@@ -29,6 +29,8 @@
 | [chain-hash.md](chain-hash.md) | 滚动前缀哈希与 FNV-1a、前缀判定公式、稳定 run id、`map`/`sort`/`getline` 配对原型、system-only 陷阱 | T5.3 |
 | [superstep.md](superstep.md) | 超步归并：ToolExec/ToolCall 字段表、`contains` 只读判断、`map` 反查、`max` 钳负区间、失败分级判定顺序 | T5.4 |
 | [mermaid.md](mermaid.md) | Mermaid flowchart/gantt 语法、HTML 实体转义表、id 与标签分离、字符串拼接原型 | T6.1 |
+| [finalize.md](finalize.md) | filesystem 路径/原子写/幂等/rename 语义、meta 降级计数来源、sessionId 安全约束 | T6.2 |
+| [markdown-table.md](markdown-table.md) | 表格语法、`|`/反引号/换行转义、UTF-8 截断边界、空值 `—`、失败信息前置 | T6.3 |
 
 ## 记一条纪律
 
