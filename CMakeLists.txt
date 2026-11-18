@@ -33,6 +33,8 @@ add_executable(mxr
     src/graph/mermaid.cpp
     src/store/finalize.cpp
     src/ui/report.cpp
+    src/ui/webui.cpp
+    src/ui/webui_assets.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
 # Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
@@ -192,3 +194,13 @@ add_executable(report_test
     src/model/model.cpp
 )
 target_include_directories(report_test PRIVATE src third_party)
+
+# T7.1 验证台：Web UI 服务端（起真 HTTP 服务，测路由与路径穿越）
+add_executable(webui_test
+    tests/webui_test.cpp
+    src/ui/webui.cpp
+    src/ui/webui_assets.cpp
+    src/model/model.cpp
+)
+target_include_directories(webui_test PRIVATE src third_party third_party/cpp-httplib)
+target_link_libraries(webui_test PRIVATE ws2_32)
