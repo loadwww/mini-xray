@@ -10,6 +10,7 @@ add_executable(mxr
     src/common/version.cpp
     src/cli/cli.cpp
     src/cli/replay.cpp
+    src/cli/commands.cpp
     src/config/config.cpp
     src/common/filewriter.cpp
     src/store/jsonl_writer.cpp
@@ -204,3 +205,10 @@ add_executable(webui_test
 )
 target_include_directories(webui_test PRIVATE src third_party third_party/cpp-httplib)
 target_link_libraries(webui_test PRIVATE ws2_32)
+
+# T7.2 验证台：CLI 子命令（直接调 cmdXxx，抓 stdout 断言）
+add_executable(commands_test
+    tests/commands_test.cpp
+    src/cli/commands.cpp
+)
+target_include_directories(commands_test PRIVATE src third_party)

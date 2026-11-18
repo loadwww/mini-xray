@@ -1,15 +1,18 @@
 #include "cli.h"
 
+#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "cli/replay.h"
 #include "common/version.h"
 #include "config/config.h"
 #include "proxy/route.h"
 #include "proxy/server.h"
+#include "commands.h"
 #include "store/jsonl_writer.h"
 
 namespace {
@@ -20,12 +23,29 @@ void printUsage(std::ostream& os) {
     os << "usage: mxr [--verbose] [--root <dir>] <command> [args...]\n"
           "\n"
           "commands:\n"
-          "  version          打印版本号\n"
-          "  cfg <path>       加载配置并以 JSON 打印\n"
-          "  serve [cfg]      启动反向代理（默认读 config.json）\n"
-          "  echo <text>      向 <root>/events.jsonl 追加一条记录\n"
-          "  replay <file>    只读 events.jsonl，重建 SSE 流并与 sse_end 对账\n"
-          "  help             显示本说明\n";
+          "  version            打印版本号\n"
+          "  cfg <path>         加载配置并以 JSON 打印\n"
+          "  serve [cfg]        启动反向代理（默认读 config.json）\n"
+          "  echo <text>        向 <root>/events.jsonl 追加一条记录\n"
+          "  replay <file>      只读 events.jsonl，重建 SSE 流并与 sse_end 对账\n"
+          "  show <run-dir>     打印 run 摘要（步数/耗时/工具表）\n"
+          "  list [--root <dir>] [--json]   列出会话（按时间倒序）\n"
+          "  diff <A> <B>       对齐两个 run，报告首个分叉点\n"
+          "  run -- <cmd...>    起代理 + 子进程（下一关实现）\n"
+          "  prune              清理旧会话（暂未实现）\n"
+          "  selftest           运行内置自检（暂未实现）\n"
+          "  help               显示本说明\n";
+}
+
+// 每个子命令单独的用法：cmd --help 时走这里，退出码 0（用户主动问的）
+void printCommandHelp(std::ostream& os, const std::string& cmd) {
+    os << "usage: mxr " << cmd << " ...\n";
+    if (cmd == "show")       os << "  show <run-dir>   读取目录下的 run.json 并打印摘要\n";
+    else if (cmd == "list")  os << "  list [--root <dir>] [--json]   扫 meta.json 列出会话，按时间倒序\n";
+    else if (cmd == "diff")  os << "  diff <A> <B>     按步序号对齐两个 run，输出首个分叉点与字段变化\n";
+    else if (cmd == "run")   os << "  run -- <cmd...>  起代理并运行子进程（下一关实现）\n";
+    else if (cmd == "prune") os << "  prune            清理旧会话（暂未实现）\n";
+    else if (cmd == "selftest") os << "  selftest         运行内置自检（暂未实现）\n";
 }
 
 // 退出码表：脚本靠它判断成败，三个值各有明确含义，别混用
@@ -133,6 +153,39 @@ int mxr::run(int argc, char* argv[]) {
                 return kExitUsage;
             }
             return replay(argv[i + 1]) == 0 ? kExitOk : kExitFail;
+        }
+
+        // cmdXxx 只收"子命令之后"的参数（不含程序名和子命令名）
+        std::vector<std::string> subArgs(argv + i + 1, argv + argc);
+
+        // 子命令的 --help：用户主动问，走 stdout + 退出码 0
+        if (std::find(subArgs.begin(), subArgs.end(), "--help") != subArgs.end()
+            || std::find(subArgs.begin(), subArgs.end(), "-h") != subArgs.end()) {
+            printCommandHelp(std::cout, cmd);
+            return kExitOk;
+        }
+
+        if (cmd == "show") {
+            return cmdShow(subArgs);
+        }
+        if (cmd == "list") {
+            // 子命令没显式 --root 时，仅当全局 --root 被显式改过（非默认 "."）才注入。
+            // 全局默认 "." 是给 echo 的；list 自己的默认值 "runs" 不能被它覆盖。
+            if (g.root != "." && std::find(subArgs.begin(), subArgs.end(), "--root") == subArgs.end())
+                subArgs.insert(subArgs.begin(), {"--root", g.root});
+            return cmdList(subArgs);
+        }
+        if (cmd == "diff") {
+            return cmdDiff(subArgs);
+        }
+        if (cmd == "run") {
+            // 下一关 T7.3 实现代理 + 子进程；现在是明确标注的占位
+            std::cerr << "mxr run: 尚未实现（将在 T7.3 接入代理与子进程）\n";
+            return kExitFail;
+        }
+        if (cmd == "prune" || cmd == "selftest") {
+            std::cerr << "mxr " << cmd << ": 暂未实现\n";
+            return kExitFail;
         }
 
         std::cerr << "mxr: 未知命令 " << cmd << "\n";
