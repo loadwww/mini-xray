@@ -267,6 +267,12 @@ namespace mxr
 
 int serve(const Config &cfg)
 {
+    return serveSession(cfg, std::string(), nullptr);
+}
+
+int serveSession(const Config &cfg, const std::string &sessionId,
+                 std::atomic<bool> *externalStop)
+{
     httplib::Server svr;
 
     // ── 超时 ──────────────────────────────────────────────────
@@ -284,7 +290,8 @@ int serve(const Config &cfg)
     // 每次启动一个目录：<root>/runs/20261114-153012/events.jsonl
     // 为什么按"一次启动"分目录而不是写同一个文件：一次会话 = 一条链路，
     // M5 还原、M6 出报告都是以 run 为单位的；混在一起就得靠时间戳切分。
-    const std::string runDir = cfg.root + "/runs/" + stampNow();
+    const std::string runDir = cfg.root + "/runs/"
+                             + (sessionId.empty() ? stampNow() : sessionId);
     std::error_code ec;
     std::filesystem::create_directories(runDir, ec);
     if (ec)
@@ -372,9 +379,26 @@ int serve(const Config &cfg)
               << std::flush;
 
     g_svr = &svr;
+    g_stopRequested = false;
 #ifdef _WIN32
     SetConsoleCtrlHandler(onConsoleCtrl, TRUE);
 #endif
+
+    // 外部停止信号：run 命令在子进程结束后置 true。监视线程轮询并调 stop()，
+    // 复用与 Ctrl+C 完全相同的停止路径（listen 返回 → 栈展开 → rec.flush）。
+    std::thread stopWatcher;
+    if (externalStop)
+    {
+        stopWatcher = std::thread([&svr, externalStop] {
+            while (!externalStop->load() && !g_stopRequested.load())
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            if (!g_stopRequested.load())
+            {
+                g_stopRequested = true;
+                svr.stop();
+            }
+        });
+    }
 
     if (!svr.listen("0.0.0.0", cfg.port))
     {
@@ -385,6 +409,8 @@ int serve(const Config &cfg)
         }
         // 走到这里是 Ctrl+C：正常退出，但得先把队列写空再报数字
     }
+
+    if (stopWatcher.joinable()) stopWatcher.join();
 
     rec.flush(); // 停写线程 + 排空队列
     std::cout << "已停止：事件写入 " << rec.written() << " 条";

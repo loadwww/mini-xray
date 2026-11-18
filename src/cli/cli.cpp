@@ -11,6 +11,7 @@
 #include "common/version.h"
 #include "config/config.h"
 #include "proxy/route.h"
+#include "proxy/runner.h"
 #include "proxy/server.h"
 #include "commands.h"
 #include "store/jsonl_writer.h"
@@ -179,9 +180,28 @@ int mxr::run(int argc, char* argv[]) {
             return cmdDiff(subArgs);
         }
         if (cmd == "run") {
-            // 下一关 T7.3 实现代理 + 子进程；现在是明确标注的占位
-            std::cerr << "mxr run: 尚未实现（将在 T7.3 接入代理与子进程）\n";
-            return kExitFail;
+            // 约定：mxr run -- <cmd...>，"--" 之后的内容原样交给子进程。
+            if (subArgs.empty() || subArgs[0] != "--") {
+                std::cerr << "mxr run: 用法 mxr run -- <command...>\n";
+                return kExitUsage;
+            }
+            std::vector<std::string> childCmd(subArgs.begin() + 1, subArgs.end());
+            if (childCmd.empty()) {
+                std::cerr << "mxr run: -- 之后需要一条命令\n";
+                return kExitUsage;
+            }
+            std::optional<Config> cfg = loadConfig("config.json");
+            if (cfg == std::nullopt) {
+                std::cerr << "mxr run: 配置文件格式有误\n";
+                return kExitFail;
+            }
+            int childExit = -1;
+            std::string err;
+            if (!runTarget(*cfg, childCmd, childExit, err)) {
+                std::cerr << "mxr run: " << err << "\n";
+                return kExitFail;
+            }
+            return childExit;  // 子进程退出码透传（崩溃时也已完成落盘）
         }
         if (cmd == "prune" || cmd == "selftest") {
             std::cerr << "mxr " << cmd << ": 暂未实现\n";

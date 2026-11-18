@@ -21,6 +21,8 @@ add_executable(mxr
     src/proxy/target.cpp
     src/proxy/stream_bridge.cpp
     src/proxy/server.cpp
+    src/proxy/spawn.cpp
+    src/proxy/runner.cpp
     src/parse/sse.cpp
     src/common/clock.cpp
     src/store/event.cpp
@@ -210,5 +212,14 @@ target_link_libraries(webui_test PRIVATE ws2_32)
 add_executable(commands_test
     tests/commands_test.cpp
     src/cli/commands.cpp
+    src/proxy/spawn.cpp
 )
 target_include_directories(commands_test PRIVATE src third_party)
+
+# T7.3 验证台：spawn 子进程 + 环境注入（真起 cmd 进程，不联网）
+add_executable(spawn_test
+    tests/spawn_test.cpp
+    src/proxy/spawn.cpp
+)
+target_include_directories(spawn_test PRIVATE src third_party)
+target_link_libraries(spawn_test PRIVATE ws2_32)
