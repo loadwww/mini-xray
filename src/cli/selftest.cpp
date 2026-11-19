@@ -111,6 +111,14 @@ SelftestSummary runSelftest(const std::string &baseDir,
                   << (ok ? "" : "  (exit=" + std::to_string(rc) + ")") << "\n";
         sum.outcomes.push_back({name, ok, ms});
         if (ok) ++sum.passed; else ++sum.failed;
+
+        if (!ok) {
+            // 失败时再跑一遍、这次不丢弃输出。否则 CI 日志里只剩 exit=1，
+            // 看不出是哪条断言红了（验证台的诊断全被上面的 >nul 吞掉了）。
+            std::cout.flush();
+            const std::string diag = "\"" + exe.string() + "\"";
+            std::system(diag.c_str());
+        }
     }
 
     std::cout << "\n" << sum.passed << " passed, " << sum.failed << " failed\n";
