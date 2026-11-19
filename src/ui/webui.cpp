@@ -15,7 +15,6 @@ namespace mxr
     bool resolveRunDir(const std::string &rootDir, const std::string &dir,
                        std::string &outResolved, std::string &outError)
     {
-        /*①*/
         if (dir.empty())
         {
             outError = "dir为空";
@@ -56,7 +55,6 @@ namespace mxr
     // 读 run 目录产物并组装前端 JSON，坏文件安全回落。
     json buildRunApiJson(const std::string &resolvedDir)
     {
-        /*②*/
         json out;
 
         out["ok"] = true;
@@ -142,7 +140,6 @@ namespace mxr
     void registerWebUi(httplib::Server &svr, const std::string &rootDir,
                        const std::string &html)
     {
-        /*③*/
         svr.Get("/__xray", [html](const httplib::Request &req, httplib::Response &res)
                 {
                     res.status = 200;

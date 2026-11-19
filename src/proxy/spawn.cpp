@@ -128,7 +128,6 @@ namespace mxr
                       int &outExitCode,
                       std::string &outError)
     {
-        /*①*/
         if (argv.empty())
         {
             outError = "命令为空";

@@ -42,18 +42,16 @@ std::optional<Upstream> parseUpstream(const nlohmann::json& el) {
 } // namespace
 
 std::optional<Config> loadConfig(const std::string& path) {
-    // ① 打开文件
     std::ifstream in(path);
     if (!in.is_open()) {
         std::cerr << "[config] 打不开 " << path << "，使用默认配置\n";
         return Config{};                       // 情况 a：降级，注意不是 nullopt
     }
 
-    // ② 整读成字符串（括号别丢，否则变成函数声明）
+    // 整读成字符串
     std::string text((std::istreambuf_iterator<char>(in)),
                       std::istreambuf_iterator<char>());
 
-    // ③ 解析
     nlohmann::json j;
     try {
         j = nlohmann::json::parse(text);
@@ -62,7 +60,7 @@ std::optional<Config> loadConfig(const std::string& path) {
         return std::nullopt;                   // 情况 b：fatal
     }
 
-    // ④ 顶层必须是对象
+    // 顶层必须是对象
     if (!j.is_object()) {
         std::cerr << "[config] 顶层不是 JSON 对象\n";
         return std::nullopt;

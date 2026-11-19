@@ -67,9 +67,7 @@ void Socket::connectTo(const std::string& host, int port) {
     addr.sin_port   = htons(port);
     addr.sin_addr.s_addr = inet_addr(host.c_str()); 
 
-    // ④ connect(handle_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))
-    //    泛型指针强转是 C 接口没有继承关系的必然；sizeof(addr) 必须是 sockaddr_in 的大小，传小了内核按 sockaddr 读，端口错位。
-    //    返回 SOCKET_ERROR 就抛 std::runtime_error，消息里带上 WSAGetLastError()
+    // 发起连接；失败抛异常并带上系统错误码
     if(connect(handle_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr))==SOCKET_ERROR){
         throw std::runtime_error("connect 失败，错误码 " + std::to_string(WSAGetLastError())); 
     }
@@ -77,11 +75,7 @@ void Socket::connectTo(const std::string& host, int port) {
 
 void Socket::sendAll(std::string_view data) {
     std::size_t sent = 0;
-    // ⑤ 循环到 sent == data.size()：
-    //      send(handle_, data.data() + sent, static_cast<int>(data.size() - sent), 0)
-    //    返值是"这次拷进内核发送缓冲区"的字节数，可能远小于请求量，所以 sent += 返值 继续发；
-    //    返回 SOCKET_ERROR 就抛异常。
-    //    两个不许：不许只发一次（会截断请求）、不许每次从 data.data() 重头（重复已发字节）。
+    // send 可能只发出一部分，按已发字节数推进直到发完
     while (sent < data.size()) {
         const int n = send(handle_, data.data() + sent, static_cast<int>(data.size() - sent), 0);
         if (n == SOCKET_ERROR) {
@@ -92,9 +86,7 @@ void Socket::sendAll(std::string_view data) {
 }
 
 int Socket::recvSome(char* buf, int len) {
-    // ⑥ 直接 return recv(handle_, buf, len, 0) 的结果。
-    //    不要在这里"包装"成 bool 或 string —— 三种返回值（>0 / 0 / SOCKET_ERROR）语义不同，
-    //    由调用方决定怎么处理，包起来就丢信息了
+    // 保留 recv 的三种返回值（>0 / 0 / SOCKET_ERROR），由调用方决定怎么处理
     return recv(handle_, buf, len, 0);
 }
 

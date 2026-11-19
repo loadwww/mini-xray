@@ -11,8 +11,7 @@ namespace mxr
 
     Listener::Listener(int port)
     {
-        // ① 建监听用的套接字（和客户端一样：AF_INET / SOCK_STREAM / IPPROTO_TCP），赋给 handle_。
-        //    失败（== INVALID_SOCKET）抛 std::runtime_error，带 WSAGetLastError()。
+        // 建监听套接字；失败抛异常并带上系统错误码
         handle_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (handle_ == INVALID_SOCKET)
         {
@@ -26,9 +25,7 @@ namespace mxr
             throw std::runtime_error("setsockopt 失败，错误码 " + std::to_string(WSAGetLastError()));
         }
 
-        // ③ 占住端口：先把 sockaddr_in 填好（AF_INET / htons(port) / INADDR_ANY），再 bind。
-        //    INADDR_ANY = 0.0.0.0，表示"本机所有网卡都收"，这和服务端的语义一致（客户端才需要指定具体地址）。
-        //    bind 返回 SOCKET_ERROR 就抛，带 WSAGetLastError()（端口被占是 10048）。
+        // 绑定本机所有网卡的指定端口
         sockaddr_in addr{};
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
@@ -37,9 +34,7 @@ namespace mxr
         {
             throw std::runtime_error("connect 失败，错误码 " + std::to_string(WSAGetLastError()));
         }
-        // ④ 开始排队：listen(handle_, backlog)，backlog 是"还没被 accept 的连接最多排多少个"。
-        //    它不建立连接，只是告诉内核"这个句柄从今往后是监听用的，请把新连接放进队列"。
-        //    传 SOMAXCONN 让系统用默认上限。失败抛异常。
+        // 进入监听状态，新连接排队等待 accept
         if (listen(handle_, SOMAXCONN) < 0)
         {
             throw std::runtime_error("listen 失败，错误码 " + std::to_string(WSAGetLastError()));

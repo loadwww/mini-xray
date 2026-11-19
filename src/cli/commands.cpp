@@ -80,7 +80,6 @@ namespace mxr
     // 读 run.json 打印摘要、每步耗时与工具表。
     int cmdShow(const std::vector<std::string> &args)
     {
-        /*①*/
         auto pos = positionals(args);
         if (pos.empty()) { std::cerr << "mxr show: 缺少 run 目录\n"; return kUsage; }
         bool ok;
@@ -114,7 +113,6 @@ namespace mxr
     // 扫描会话目录的 meta.json，按开始时间倒序列出。
     int cmdList(const std::vector<std::string> &args)
     {
-        /*②*/
         std::string root = flagValue(args, "--root");
         if (root.empty()) root = "runs";
         json arr = json::array();
@@ -149,7 +147,6 @@ namespace mxr
     // 按步序号对齐两个 run，报告首个分叉点与字段变化。
     int cmdDiff(const std::vector<std::string> &args)
     {
-        /*③*/
         auto pos = positionals(args);
         if (pos.size() != 2) { std::cerr << "mxr diff: 需要两个 run 目录\n"; return kUsage; }
         bool okA, okB;

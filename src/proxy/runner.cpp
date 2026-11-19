@@ -29,7 +29,6 @@ namespace mxr
                    int &outChildExit,
                    std::string &outError)
     {
-        /*①*/
         if (command.empty())
         {
             outError = "命令为空";
