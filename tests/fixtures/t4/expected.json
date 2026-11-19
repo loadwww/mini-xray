@@ -1,0 +1,35 @@
+{
+  "note": "t4 工具失败：hop1 发起 tool_calls，hop2 请求带回 is_error:true 的结果。测 tool_call_id 配对 + 协议层 confirmed 分级 + 并行区间耗时推断。",
+  "run_count": 1,
+  "step_count": 2,
+  "tool_count": 1,
+  "failed": 1,
+  "total_tokens": 40,
+  "run_steps": [
+    2
+  ],
+  "step_indexes": [
+    0,
+    1
+  ],
+  "step_tokens": [
+    28,
+    12
+  ],
+  "step_outputs": [
+    "",
+    "done"
+  ],
+  "tool_ids": [
+    "call-1"
+  ],
+  "tool_names": [
+    "search"
+  ],
+  "tool_errors": [
+    "confirmed"
+  ],
+  "duration_inferred": [
+    true
+  ]
+}

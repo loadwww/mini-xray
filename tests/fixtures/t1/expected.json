@@ -1,0 +1,8 @@
+{
+  "note": "t1 基线：单个非流式请求，无工具。测的是最短路径能还原出 1 run / 1 step / 0 工具，token 从 usage 读出。",
+  "run_count": 1,
+  "step_count": 1,
+  "tool_count": 0,
+  "failed": 0,
+  "total_tokens": 15
+}

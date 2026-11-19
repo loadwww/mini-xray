@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -14,6 +15,7 @@
 #include "proxy/runner.h"
 #include "proxy/server.h"
 #include "commands.h"
+#include "cli/selftest.h"
 #include "store/jsonl_writer.h"
 
 namespace {
@@ -34,7 +36,7 @@ void printUsage(std::ostream& os) {
           "  diff <A> <B>       对齐两个 run，报告首个分叉点\n"
           "  run -- <cmd...>    起代理 + 子进程（下一关实现）\n"
           "  prune              清理旧会话（暂未实现）\n"
-          "  selftest           运行内置自检（暂未实现）\n"
+          "  selftest [name...] 运行全部/指定验证台（--list 列出）\n"
           "  help               显示本说明\n";
 }
 
@@ -46,7 +48,7 @@ void printCommandHelp(std::ostream& os, const std::string& cmd) {
     else if (cmd == "diff")  os << "  diff <A> <B>     按步序号对齐两个 run，输出首个分叉点与字段变化\n";
     else if (cmd == "run")   os << "  run -- <cmd...>  起代理并运行子进程（下一关实现）\n";
     else if (cmd == "prune") os << "  prune            清理旧会话（暂未实现）\n";
-    else if (cmd == "selftest") os << "  selftest         运行内置自检（暂未实现）\n";
+    else if (cmd == "selftest") os << "  selftest [name...] [--list]  串行跑验证台，汇总退出码\n";
 }
 
 // 退出码表：脚本靠它判断成败，三个值各有明确含义，别混用
@@ -203,8 +205,23 @@ int mxr::run(int argc, char* argv[]) {
             }
             return childExit;  // 子进程退出码透传（崩溃时也已完成落盘）
         }
-        if (cmd == "prune" || cmd == "selftest") {
-            std::cerr << "mxr " << cmd << ": 暂未实现\n";
+        if (cmd == "selftest") {
+            // --list 走 stdout；否则把剩余参数当验证台名（空 = 全部）
+            if (std::find(subArgs.begin(), subArgs.end(), "--list") != subArgs.end()) {
+                selftestList();
+                return kExitOk;
+            }
+            std::vector<std::string> testNames;
+            for (const auto &a : subArgs)
+                if (a != "--list") testNames.push_back(a);
+            // 验证台 exe 在 mxr.exe 同目录，用 argv[0] 定位（不依赖当前工作目录）
+            std::string baseDir = std::filesystem::path(argv[0]).parent_path().string();
+            if (baseDir.empty()) baseDir = ".";
+            SelftestSummary sum = runSelftest(baseDir, testNames);
+            return sum.failed == 0 ? kExitOk : kExitFail;
+        }
+        if (cmd == "prune") {
+            std::cerr << "mxr prune: 暂未实现\n";
             return kExitFail;
         }
 

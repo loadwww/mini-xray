@@ -11,6 +11,7 @@ add_executable(mxr
     src/cli/cli.cpp
     src/cli/replay.cpp
     src/cli/commands.cpp
+    src/cli/selftest.cpp
     src/config/config.cpp
     src/common/filewriter.cpp
     src/store/jsonl_writer.cpp
@@ -223,3 +224,13 @@ add_executable(spawn_test
 )
 target_include_directories(spawn_test PRIVATE src third_party)
 target_link_libraries(spawn_test PRIVATE ws2_32)
+
+# T8.2 验证台：fixture 回归（完整还原链，fixture 目录驱动）
+add_executable(fixture_test
+    tests/fixture_test.cpp
+    src/chain/link.cpp
+    src/chain/superstep.cpp
+    src/parse/extract.cpp
+    src/model/model.cpp
+)
+target_include_directories(fixture_test PRIVATE src third_party)

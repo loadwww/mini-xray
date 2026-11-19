@@ -1,0 +1,28 @@
+{
+  "note": "t3 system-only 陷阱：hop1 只有 system，虽然 hops 前缀哈希相同，但没有非 system 消息，不能当父；应拆成 2 run / 各 1 step。",
+  "run_count": 2,
+  "step_count": 2,
+  "tool_count": 0,
+  "failed": 0,
+  "total_tokens": 10,
+  "run_steps": [
+    1,
+    1
+  ],
+  "run_starts": [
+    2000,
+    2100
+  ],
+  "step_models": [
+    "gpt-4o-mini",
+    "gpt-4o-mini"
+  ],
+  "step_tokens": [
+    3,
+    7
+  ],
+  "step_outputs": [
+    "ready",
+    "hi"
+  ]
+}

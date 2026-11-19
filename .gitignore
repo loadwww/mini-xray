@@ -7,6 +7,8 @@ build/
 .obsidian/
 # 跑验证台时产生的数据文件，不是源码
 *.jsonl
+# fixture 是回归测试的输入，必须入库（上面的 *.jsonl 规则对它们是例外）
+!tests/fixtures/**/events.jsonl
 runs/
 # IDE 的本地 MCP 配置（含本机端口），是个人环境不是项目内容
 .mcp.json
