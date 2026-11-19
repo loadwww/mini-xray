@@ -62,6 +62,11 @@ cleanup() {
     if [[ -n "$SERVE_PID" ]] && kill -0 "$SERVE_PID" 2>/dev/null; then
         kill -TERM "$SERVE_PID" 2>/dev/null || true
         wait "$SERVE_PID" 2>/dev/null || true
+        # 优雅停止若没让进程退出（handler 失效等），KILL 兜底——绝不留孤儿占端口
+        if kill -0 "$SERVE_PID" 2>/dev/null; then
+            kill -KILL "$SERVE_PID" 2>/dev/null || true
+            wait "$SERVE_PID" 2>/dev/null || true
+        fi
     fi
 }
 trap cleanup EXIT
@@ -84,7 +89,9 @@ case "$(uname -s)" in
     ;;
   *)
     step "serve + 客户端：3 个请求（Linux：run 未移植，走 serve + finish）"
-    (cd "$WORK" && "$MXR_BIN" serve config.json > "$WORK/serve.log" 2>&1) &
+    # 关键：用 exec 让 mxr 接管后台 PID。否则 $! 是 subshell 的 PID，
+    # kill -TERM 只杀 subshell，真正的 mxr serve 变孤儿进程继续占端口。
+    (cd "$WORK" && exec "$MXR_BIN" serve config.json > "$WORK/serve.log" 2>&1) &
     SERVE_PID=$!
     for _ in $(seq 1 50); do
         if port_busy "$PROXY_PORT"; then break; fi
