@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include <atomic>
+#include <csignal>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -53,6 +54,13 @@ namespace
             g_svr->stop(); // 让阻塞中的 listen() 返回
         }
         return TRUE;
+    }
+#else
+    // POSIX：SIGINT/SIGTERM 只置标志，真正 stop() 由下面的监视线程做。
+    // signal handler 里只碰 std::atomic<bool>，避免在里面调非 signal-safe 的函数。
+    void onPosixSignal(int /*sig*/)
+    {
+        g_stopRequested.store(true);
     }
 #endif
 
@@ -382,23 +390,26 @@ int serveSession(const Config &cfg, const std::string &sessionId,
     g_stopRequested = false;
 #ifdef _WIN32
     SetConsoleCtrlHandler(onConsoleCtrl, TRUE);
+#else
+    std::signal(SIGINT, onPosixSignal);
+    std::signal(SIGTERM, onPosixSignal);
 #endif
 
     // 外部停止信号：run 命令在子进程结束后置 true。监视线程轮询并调 stop()，
     // 复用与 Ctrl+C 完全相同的停止路径（listen 返回 → 栈展开 → rec.flush）。
-    std::thread stopWatcher;
-    if (externalStop)
-    {
-        stopWatcher = std::thread([&svr, externalStop] {
-            while (!externalStop->load() && !g_stopRequested.load())
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            if (!g_stopRequested.load())
-            {
-                g_stopRequested = true;
-                svr.stop();
-            }
-        });
-    }
+    // 无条件启动：Windows 的 run 命令靠 externalStop 停；Linux 的 serve 靠 SIGINT/SIGTERM
+    // 置 g_stopRequested；两条路都汇到这个线程调 svr.stop()，复用同一停止路径。
+    std::thread stopWatcher([&svr, externalStop] {
+        while (true)
+        {
+            bool ext = externalStop && externalStop->load();
+            if (ext || g_stopRequested.load())
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+        g_stopRequested = true;
+        svr.stop();
+    });
 
     if (!svr.listen("0.0.0.0", cfg.port))
     {

@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 让 CMake 在 build/ 下产出 compile_commands.json：IDE/clangd 据此获得精确的 include 路径与宏
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Linux 下 std::thread 需要显式链接 pthread（glibc 2.34+ 已并入 libc，但显式更稳）
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+endif()
+
 add_executable(mxr
     src/main.cpp
     src/common/version.cpp
@@ -12,18 +17,14 @@ add_executable(mxr
     src/cli/replay.cpp
     src/cli/commands.cpp
     src/cli/selftest.cpp
+    src/cli/finish.cpp
     src/config/config.cpp
     src/common/filewriter.cpp
     src/store/jsonl_writer.cpp
-    src/net/socket.cpp
-    src/net/listener.cpp
-    src/http/http_request.cpp
     src/proxy/route.cpp
     src/proxy/target.cpp
     src/proxy/stream_bridge.cpp
     src/proxy/server.cpp
-    src/proxy/spawn.cpp
-    src/proxy/runner.cpp
     src/parse/sse.cpp
     src/common/clock.cpp
     src/store/event.cpp
@@ -41,8 +42,23 @@ add_executable(mxr
     src/ui/webui_assets.cpp
 )
 target_include_directories(mxr PRIVATE src third_party third_party/cpp-httplib)
-# Winsock2 不是 header-only，socket/connect/send/recv 的实现在 ws2_32.dll 里，必须显式链接
-target_link_libraries(mxr PRIVATE ws2_32)
+
+# ── 平台差异（T8.4）─────────────────────────────────────────────────
+# Windows-only 的源：net 层是裸 Winsock 教学代码（M2），spawn/runner 依赖
+# CreateProcessW。Linux 下 proxy 用 cpp-httplib 自己监听，不需要 net 层；
+# run 命令在 Linux 明确报"不支持"（见 cli.cpp），所以这几个文件都不参与构建。
+if(WIN32)
+    target_sources(mxr PRIVATE
+        src/net/socket.cpp
+        src/net/listener.cpp
+        src/http/http_request.cpp
+        src/proxy/spawn.cpp
+        src/proxy/runner.cpp
+    )
+    target_link_libraries(mxr PRIVATE ws2_32)
+else()
+    target_link_libraries(mxr PRIVATE Threads::Threads)
+endif()
 
 # T1.4 验证台（独立目标，不参与 mxr 本体）
 add_executable(jsonl_test
@@ -52,37 +68,49 @@ add_executable(jsonl_test
 )
 target_include_directories(jsonl_test PRIVATE src third_party)
 
-# T2.1 验证台：裸 socket 客户端
-add_executable(socket_check
-    tests/socket_check.cpp
-    src/net/socket.cpp
-)
-target_include_directories(socket_check PRIVATE src third_party)
-target_link_libraries(socket_check PRIVATE ws2_32)
+if(WIN32)
+    # T2.1 验证台：裸 socket 客户端
+    add_executable(socket_check
+        tests/socket_check.cpp
+        src/net/socket.cpp
+    )
+    target_include_directories(socket_check PRIVATE src third_party)
+    if(WIN32)
+        target_link_libraries(socket_check PRIVATE ws2_32)
+    endif()
+endif()
 
-# T2.2 验证台：手写的最小 HTTP 服务端
-add_executable(http_server_check
-    tests/http_server_check.cpp
-    src/net/socket.cpp
-    src/net/listener.cpp
-    src/http/http_request.cpp
-)
-target_include_directories(http_server_check PRIVATE src third_party)
-target_link_libraries(http_server_check PRIVATE ws2_32)
+if(WIN32)
+    # T2.2 验证台：手写的最小 HTTP 服务端
+    add_executable(http_server_check
+        tests/http_server_check.cpp
+        src/net/socket.cpp
+        src/net/listener.cpp
+        src/http/http_request.cpp
+    )
+    target_include_directories(http_server_check PRIVATE src third_party)
+    if(WIN32)
+        target_link_libraries(http_server_check PRIVATE ws2_32)
+    endif()
+endif()
 
 # T2.3 验证台：同样的服务端，换成 cpp-httplib（header-only，只 include 即可）
 add_executable(httplib_check
     tests/httplib_check.cpp
 )
 target_include_directories(httplib_check PRIVATE third_party third_party/cpp-httplib)
-target_link_libraries(httplib_check PRIVATE ws2_32)
+if(WIN32)
+    target_link_libraries(httplib_check PRIVATE ws2_32)
+endif()
 
 # T2.4 mock 上游：M3 起当"假 OpenAI"用，长期挂着的进程
 add_executable(mock_upstream
     tests/mock_upstream.cpp
 )
 target_include_directories(mock_upstream PRIVATE third_party third_party/cpp-httplib)
-target_link_libraries(mock_upstream PRIVATE ws2_32)
+if(WIN32)
+    target_link_libraries(mock_upstream PRIVATE ws2_32)
+endif()
 
 # T3.1 验证台：路由匹配（纯字符串，不联网）
 add_executable(route_test
@@ -207,23 +235,31 @@ add_executable(webui_test
     src/model/model.cpp
 )
 target_include_directories(webui_test PRIVATE src third_party third_party/cpp-httplib)
-target_link_libraries(webui_test PRIVATE ws2_32)
+if(WIN32)
+    target_link_libraries(webui_test PRIVATE ws2_32)
+endif()
 
 # T7.2 验证台：CLI 子命令（直接调 cmdXxx，抓 stdout 断言）
 add_executable(commands_test
     tests/commands_test.cpp
     src/cli/commands.cpp
-    src/proxy/spawn.cpp
 )
+if(WIN32)
+    target_sources(commands_test PRIVATE src/proxy/spawn.cpp)
+endif()
 target_include_directories(commands_test PRIVATE src third_party)
 
-# T7.3 验证台：spawn 子进程 + 环境注入（真起 cmd 进程，不联网）
-add_executable(spawn_test
-    tests/spawn_test.cpp
-    src/proxy/spawn.cpp
-)
-target_include_directories(spawn_test PRIVATE src third_party)
-target_link_libraries(spawn_test PRIVATE ws2_32)
+if(WIN32)
+    # T7.3 验证台：spawn 子进程 + 环境注入（真起 cmd 进程，不联网）
+    add_executable(spawn_test
+        tests/spawn_test.cpp
+        src/proxy/spawn.cpp
+    )
+    target_include_directories(spawn_test PRIVATE src third_party)
+    if(WIN32)
+        target_link_libraries(spawn_test PRIVATE ws2_32)
+    endif()
+endif()
 
 # T8.2 验证台：fixture 回归（完整还原链，fixture 目录驱动）
 add_executable(fixture_test

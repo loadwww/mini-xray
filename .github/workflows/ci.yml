@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 配置 MSVC x64 环境
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: 配置
+        run: cmake -S . -B build -G Ninja
+
+      - name: 编译
+        run: cmake --build build
+
+      - name: 自检（selftest）
+        run: .\build\mxr.exe selftest
+        shell: pwsh
+
+      - name: 端到端（e2e.ps1）
+        run: .\tests\e2e.ps1
+        shell: pwsh
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: 安装构建依赖
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build
+
+      - name: 配置
+        run: cmake -S . -B build -G Ninja
+
+      - name: 编译
+        run: cmake --build build
+
+      - name: 自检（selftest）
+        run: ./build/mxr selftest
+
+      - name: 端到端（e2e.sh：serve + finish 路线）
+        run: bash tests/e2e.sh

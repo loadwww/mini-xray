@@ -1,0 +1,12 @@
+# T8.4 CI 双平台：换行符必须固定，否则同一份源码在两个平台行为不同。
+# 本机 core.autocrlf=true，但 CI 的 checkout 不看本机配置，只看这里。
+
+# shell 脚本必须是 LF：CRLF 会让 linux 的 bash 报 "bad interpreter"
+*.sh text eol=lf
+# Python 脚本必须 LF（Windows 下 python 两者都能读，但统一避免 diff 噪声）
+*.py text eol=lf
+# PowerShell 5.1 需要 CRLF + BOM（T8.3 的坑）
+*.ps1 text eol=crlf
+# fixture 事件流与期望值统一 LF
+*.jsonl text eol=lf
+*.json text eol=lf

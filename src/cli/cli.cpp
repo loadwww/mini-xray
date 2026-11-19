@@ -12,8 +12,11 @@
 #include "common/version.h"
 #include "config/config.h"
 #include "proxy/route.h"
+#ifdef _WIN32
 #include "proxy/runner.h"
+#endif
 #include "proxy/server.h"
+#include "cli/finish.h"
 #include "commands.h"
 #include "cli/selftest.h"
 #include "store/jsonl_writer.h"
@@ -34,7 +37,8 @@ void printUsage(std::ostream& os) {
           "  show <run-dir>     打印 run 摘要（步数/耗时/工具表）\n"
           "  list [--root <dir>] [--json]   列出会话（按时间倒序）\n"
           "  diff <A> <B>       对齐两个 run，报告首个分叉点\n"
-          "  run -- <cmd...>    起代理 + 子进程（下一关实现）\n"
+          "  run -- <cmd...>    起代理 + 子进程（仅 Windows；Linux 用 serve + finish）\n"
+          "  finish <session>  从 runs/<id>/events.jsonl 重建报告包\n"
           "  prune              清理旧会话（暂未实现）\n"
           "  selftest [name...] 运行全部/指定验证台（--list 列出）\n"
           "  help               显示本说明\n";
@@ -46,7 +50,8 @@ void printCommandHelp(std::ostream& os, const std::string& cmd) {
     if (cmd == "show")       os << "  show <run-dir>   读取目录下的 run.json 并打印摘要\n";
     else if (cmd == "list")  os << "  list [--root <dir>] [--json]   扫 meta.json 列出会话，按时间倒序\n";
     else if (cmd == "diff")  os << "  diff <A> <B>     按步序号对齐两个 run，输出首个分叉点与字段变化\n";
-    else if (cmd == "run")   os << "  run -- <cmd...>  起代理并运行子进程（下一关实现）\n";
+    else if (cmd == "run")   os << "  run -- <cmd...>  起代理并运行子进程（仅 Windows）\n";
+    else if (cmd == "finish") os << "  finish <sessionId>  从 runs/<id>/events.jsonl 重建报告包\n";
     else if (cmd == "prune") os << "  prune            清理旧会话（暂未实现）\n";
     else if (cmd == "selftest") os << "  selftest [name...] [--list]  串行跑验证台，汇总退出码\n";
 }
@@ -182,6 +187,10 @@ int mxr::run(int argc, char* argv[]) {
             return cmdDiff(subArgs);
         }
         if (cmd == "run") {
+#ifndef _WIN32
+            std::cerr << "mxr run: 当前平台未实现子进程编排；请用 serve + finish\n";
+            return kExitUsage;
+#else
             // 约定：mxr run -- <cmd...>，"--" 之后的内容原样交给子进程。
             if (subArgs.empty() || subArgs[0] != "--") {
                 std::cerr << "mxr run: 用法 mxr run -- <command...>\n";
@@ -204,6 +213,19 @@ int mxr::run(int argc, char* argv[]) {
                 return kExitFail;
             }
             return childExit;  // 子进程退出码透传（崩溃时也已完成落盘）
+#endif
+        }
+        if (cmd == "finish") {
+            if (subArgs.size() != 1) {
+                std::cerr << "mxr finish: 用法 mxr finish <sessionId>\n";
+                return kExitUsage;
+            }
+            std::string err;
+            if (!finishRun(g.root, subArgs[0], err)) {
+                std::cerr << "mxr finish: " << err << "\n";
+                return kExitFail;
+            }
+            return kExitOk;
         }
         if (cmd == "selftest") {
             // --list 走 stdout；否则把剩余参数当验证台名（空 = 全部）

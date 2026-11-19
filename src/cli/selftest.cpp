@@ -30,7 +30,9 @@ const char *const kAllTests[] = {
     "report_test",          // T6.3 报告
     "webui_test",           // T7.1 Web UI 路由
     "commands_test",        // T7.2 CLI 子命令
-    "spawn_test",           // T7.3 子进程
+#ifdef _WIN32
+    "spawn_test",           // T7.3 子进程（Windows-only：CreateProcessW）
+#endif
     "fixture_test",         // T8.2 fixture 回归
 };
 

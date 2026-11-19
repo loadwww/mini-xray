@@ -34,6 +34,7 @@
 | [webui-routing.md](webui-routing.md) | httplib 路由/query 参数、weakly_canonical 路径穿越防护、轮询判据、内嵌 HTML 原始字面量 | T7.1 |
 | [cli-subcommands.md](cli-subcommands.md) | 退出码 0/1/2 契约、argv 解析、directory_iterator/JSON 安全读取、按步序号对齐（diff 为何不用时间戳）、ANSI 颜色 | T7.2 |
 | [spawn-control.md](spawn-control.md) | CreateProcessW/WaitForSingleObject、MSVC 参数转义、宽字符环境块与大小写不敏感、Ctrl+C 信号机制、环境变量注入为何零侵入 | T7.3 |
+| [ci-matrix.md](ci-matrix.md) | workflow jobs/steps 骨架、Action 版本（2026-11）、MSVC 初始化、`ws2_32` 条件化、spawn 的 Linux 缺口与三条路线、`.gitattributes` 换行符坑、CI 红验证 | T8.4 |
 
 ## 记一条纪律
 
