@@ -9,6 +9,10 @@ import json
 import os
 import sys
 
+# CI 的 Python stdout 在 Windows 上默认 cp1252，打印中文标签会 UnicodeEncodeError。
+# 显式切到 UTF-8，让本地与 CI 行为一致（Python 3.7+ 支持 reconfigure）。
+sys.stdout.reconfigure(encoding="utf-8")
+
 failures = []
 
 

@@ -11,6 +11,9 @@ import sys
 import urllib.error
 import urllib.request
 
+# CI 的 Python stdout 在 Windows 上默认 cp1252，中文断言标签会炸；统一 UTF-8。
+sys.stdout.reconfigure(encoding="utf-8")
+
 port = os.environ.get("MXR_PROXY_PORT", "18080")
 base = "http://127.0.0.1:%s/v1/chat/completions" % port
 S = {"role": "system", "content": "You are helpful."}
